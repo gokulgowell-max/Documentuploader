@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gowell International — Project Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1B30;
+    --ink-2:#173059;
+    --ink-3:#1F3C6E;
+    --paper:#FBF7EF;
+    --card:#FFFFFF;
+    --gold:#E0A737;
+    --gold-deep:#B9821E;
+    --gold-tint:#FCF0D6;
+    --teal:#0E8C79;
+    --teal-tint:#E1F4EF;
+    --rust:#E15A3B;
+    --rust-tint:#FCE7E0;
+    --charcoal:#1A1712;
+    --line:#E3D9C0;
+    --muted:#6E6350;
+    --row-alt:#F4EFE2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--charcoal);
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .serif{font-family:'Fraunces',serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;font-weight:700;}
+
+  /* ---------- HEADER ---------- */
+  .topbar{
+    background:linear-gradient(120deg,var(--ink) 0%,var(--ink-3) 100%);
+    color:var(--paper);
+    padding:22px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:3px solid var(--gold);
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand .mark{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:23px;
+    letter-spacing:0.3px;
+    background:linear-gradient(100deg,#FFFFFF 0%,#F3D48A 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .brand .sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    color:#B7C2D6;
+    text-transform:uppercase;
+  }
+  .admin-link{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid #3C5171;
+    color:#DCE3EE;
+    padding:8px 16px;
+    border-radius:2px;
+    transition:background .15s, border-color .15s;
+  }
+  .admin-link:hover{background:#1E3355;border-color:var(--gold);}
+
+  /* ---------- TEAM TABS (departure-board feel) ---------- */
+  .team-strip{
+    background:var(--ink-2);
+    display:flex;
+    padding:0 32px;
+  }
+  .team-tab{
+    background:transparent;
+    border:none;
+    color:#9FB0C7;
+    padding:16px 26px;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:17px;
+    letter-spacing:0.3px;
+    position:relative;
+    border-bottom:3px solid transparent;
+    transition:color .15s;
+  }
+  .team-tab.active{color:#fff;}
+  .team-tab .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    margin-left:8px;
+    color:#8194AC;
+  }
+  .team-tab.active .count{color:var(--gold);}
+  .team-tab[data-team="healthcare"].active{border-bottom-color:var(--teal);box-shadow:0 3px 8px -2px rgba(14,140,121,0.55);}
+  .team-tab[data-team="technical"].active{border-bottom-color:var(--rust);box-shadow:0 3px 8px -2px rgba(225,90,59,0.5);}
+
+  /* ---------- STATUS PILLS ---------- */
+  .status-row{
+    display:flex;
+    gap:10px;
+    padding:22px 32px 0 32px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .status-pill{
+    background:var(--card);
+    border:1px solid var(--line);
+    padding:8px 16px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:0.3px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--muted);
+    transition:all .15s;
+  }
+  .status-pill.active-pill{
+    border-color:var(--ink);
+    color:var(--ink);
+    background:#fff;
+    font-weight:700;
+    box-shadow:0 2px 0 var(--gold);
+  }
+  .status-pill .n{font-family:'IBM Plex Mono',monospace;font-size:12px;}
+
+  .board-date{
+    margin-left:auto;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:0.5px;
+  }
+
+  /* ---------- GRID / CARDS ---------- */
+  .grid{
+    padding:26px 32px 60px 32px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:22px;
+  }
+  .pcard{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:22px 20px 20px 20px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    transition:box-shadow .15s, transform .15s;
+  }
+  .pcard:hover{box-shadow:0 8px 22px rgba(18,33,58,0.08);transform:translateY(-2px);}
+  .route{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .route b{color:var(--charcoal);}
+  .pcard h3{
+    font-family:'Inter',sans-serif;
+    font-size:19px;
+    font-weight:800;
+    margin:0;
+    line-height:1.35;
+    color:var(--ink);
+  }
+  .tagrow{display:flex;flex-wrap:wrap;gap:8px;}
+  .tag{
+    font-size:13px;
+    background:#F1EEE5;
+    color:var(--muted);
+    padding:6px 13px;
+    border-radius:20px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    border:1px solid transparent;
+  }
+  .tag.tag-gender{background:var(--ink-3);color:#fff;background:#EEF2F8;color:var(--ink-3);border-color:#D9E1EE;}
+  .tag.tag-age{background:var(--rust-tint);color:var(--rust);}
+  .tag.tag-exp{background:var(--teal-tint);color:var(--teal);}
+  .pcard .foot{
+    margin-top:auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:8px;
+    border-top:1px solid var(--line);
+  }
+  .charge-badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--gold-deep);
+    background:var(--gold-tint);
+    border:1px solid #EFD9A0;
+    padding:5px 11px;
+    border-radius:4px;
+  }
+  .view-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:3px;
+    font-size:12.5px;
+    letter-spacing:0.5px;
+    font-weight:600;
+    transition:background .15s;
+  }
+  .view-btn:hover{background:var(--ink-2);}
+  .team-band{
+    position:absolute;
+    left:0;top:0;bottom:0;
+    width:4px;
+    border-radius:4px 0 0 4px;
+  }
+  .team-band.healthcare{background:var(--teal);}
+  .team-band.technical{background:var(--rust);}
+
+  /* ---------- EMPTY STATE ---------- */
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    padding:70px 20px;
+    color:var(--muted);
+  }
+  .empty .serif{font-size:22px;color:var(--charcoal);display:block;margin-bottom:8px;}
+
+  /* ---------- MODAL ---------- */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(18,33,58,0.55);
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:40px 16px;
+    overflow-y:auto;
+    z-index:100;
+  }
+  .modal{
+    background:var(--paper);
+    max-width:680px;
+    width:100%;
+    border-radius:6px;
+    padding:32px 32px 28px;
+    position:relative;
+    border-top:5px solid var(--gold);
+  }
+  .modal-close{
+    position:absolute;top:16px;right:16px;
+    background:none;border:none;font-size:20px;color:var(--muted);
+  }
+  .modal h2{font-family:'Inter',sans-serif;margin:0 0 4px 0;font-size:24px;font-weight:800;color:var(--ink);}
+  .modal .route{margin-bottom:18px;}
+  .detail-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;
+    margin:18px 0;
+    font-size:13.5px;
+  }
+  .detail-grid .k{color:var(--muted);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Inter',sans-serif;margin-bottom:2px;}
+  .ledger-wrap{max-height:360px;overflow-y:auto;margin-top:14px;border:2px solid var(--ink);border-radius:4px;}
+  table.ledger{
+    width:100%;border-collapse:collapse;font-size:14px;
+  }
+  table.ledger th{
+    text-align:left;font-family:'Inter',sans-serif;font-size:12px;font-weight:800;
+    text-transform:uppercase;letter-spacing:0.5px;color:#fff;
+    background:var(--ink);padding:11px 10px;
+    position:sticky;top:0;z-index:2;
+  }
+  table.ledger th.num{color:var(--gold);}
+  table.ledger td{padding:10px;border-bottom:1px solid var(--line);font-weight:600;}
+  table.ledger tbody tr:nth-child(even){background:var(--row-alt);}
+  table.ledger tbody tr:nth-child(odd){background:#FFFFFF;}
+  table.ledger tbody tr:hover{background:var(--gold-tint);}
+  table.ledger tbody tr:last-child td{border-bottom:none;}
+  table.ledger td.num{font-family:'IBM Plex Mono',monospace;font-weight:800;color:var(--gold-deep);}
+  .section-label{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;
+    letter-spacing:1.2px;color:var(--gold-deep);margin:24px 0 8px 0;
+    padding-bottom:5px;border-bottom:1px solid var(--line);
+  }
+
+  /* ---------- ADMIN ---------- */
+  .admin-shell{max-width:900px;margin:0 auto;padding:40px 20px 80px;}
+  .login-card{
+    max-width:360px;margin:60px auto;background:#fff;border:1px solid var(--line);
+    border-radius:6px;padding:30px;text-align:center;border-top:5px solid var(--gold);
+  }
+  .login-card h2{font-family:'Fraunces',serif;margin-top:0;}
+  input,select,textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
+    font-family:inherit;font-size:14px;background:#fff;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  label{font-size:12px;font-weight:500;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px;}
+  .field{margin-bottom:14px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .primary-btn{
+    background:var(--ink);color:#fff;border:none;padding:11px 20px;border-radius:3px;font-weight:700;font-size:13.5px;letter-spacing:0.3px;
+    box-shadow:0 2px 0 var(--gold-deep);transition:transform .1s, background .15s;
+  }
+  .primary-btn:hover{background:var(--ink-2);transform:translateY(-1px);}
+  .ghost-btn{
+    background:transparent;border:1px solid var(--line);color:var(--charcoal);padding:10px 16px;border-radius:3px;font-size:13px;
+  }
+  .danger-link{color:var(--rust);background:none;border:none;font-size:12.5px;text-decoration:underline;}
+  .admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+  .admin-header h1{font-family:'Fraunces',serif;font-size:26px;margin:0;}
+  .adminlist{background:#fff;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:10px;}
+  .adminrow{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);gap:12px;flex-wrap:wrap;}
+  .adminrow:last-child{border-bottom:none;}
+  .adminrow .meta{font-size:12.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+  .pos-row{display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center;}
+  .pos-row input{font-size:13px;padding:8px;}
+  .remove-x{background:none;border:none;color:var(--rust);font-size:16px;}
+  .form-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:24px;}
+  .form-card h3{font-family:'Fraunces',serif;margin-top:0;}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:12px 22px;border-radius:4px;font-size:13.5px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.2);z-index:200;
+  }
+  .loading-note{text-align:center;padding:40px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  @media(max-width:640px){
+    .detail-grid{grid-template-columns:1fr;}
+    .row2{grid-template-columns:1fr;}
+    .pos-row{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const STORAGE_KEY = 'gowell_projects_v1';
+const PASS_KEY = 'gowell_admin_pass_v1';
+
+let state = {
+  view: 'staff',          // 'staff' | 'admin-login' | 'admin-setup' | 'admin'
+  team: 'healthcare',      // 'healthcare' | 'technical'
+  status: 'active',        // 'active' | 'upcoming' | 'completed'
+  projects: [],
+  loaded: false,
+  modalProject: null,
+  editingProject: null,    // project object being edited in admin form, or null
+  showForm: false,
+  toast: null,
+  loginError: '',
+};
+
+function uid(){ return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+async function loadProjects(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    state.projects = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    state.projects = [];
+  }
+  state.loaded = true;
+  render();
+}
+
+async function saveProjects(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state.projects), true);
+  }catch(e){
+    showToast('Could not save — please try again.');
+  }
+}
+
+function showToast(msg){
+  state.toast = msg;
+  render();
+  setTimeout(()=>{ state.toast=null; render(); }, 2600);
+}
+
+function seedIfEmpty(){
+  if(state.projects.length) return;
+  state.projects.push({
+    id: uid(),
+    team:'healthcare',
+    status:'active',
+    title:'Kuwait Govt Healthcare — National Guard (Military Hospital)',
+    client:'National Guard (Military Hospital), Kuwait',
+    origin:'Kerala, India',
+    destination:'Kuwait',
+    gender:'Male candidates only',
+    ageLimit:'38 years',
+    experience:'Minimum 3 years',
+    prometric:'Not required before interview',
+    passportValidity:'Minimum 2.5 years',
+    serviceCharge:'₹4.75 – ₹5.50 Lakhs',
+    packageIncludes:'DD, Ticket charges, Visa stamping',
+    benefits:'Food, accommodation & transportation provided',
+    remarks:'',
+    positions:[
+      {position:'Nurse',qualification:"Bachelor's Degree in Nursing",experience:'3+ Years',kd:'420',inr:'1.29 LAC'},
+      {position:'Assistant Nurse',qualification:'Diploma in Nursing',experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Dental Nurse',qualification:'Diploma in Nursing',experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Physiotherapist',qualification:"Bachelor's/Master's Degree in Physiotherapy",experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Dental Laboratory Technician',qualification:'Diploma in Dental Laboratory',experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Nutritionist',qualification:"Bachelor's Degree in Nutrition",experience:'3+ Years',kd:'400',inr:'1.22 LAC'},
+      {position:'Medical Laboratory Technician',qualification:"Bachelor's Degree in Medical Laboratory Science",experience:'3+ Years',kd:'310',inr:'95 K'},
+      {position:'Optometry Specialist',qualification:"Bachelor's Degree/Diploma in Optometry",experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Audiology & Speech Specialist',qualification:"Bachelor's Degree/Diploma in Audiology",experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Radiology Specialist',qualification:"Bachelor's Degree in Radiology",experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Radiology Technician',qualification:'Diploma in Radiology',experience:'3+ Years',kd:'310',inr:'95 K'},
+      {position:'Emergency Medical Technician (EMT)',qualification:'Diploma in Emergency Medicine',experience:'3+ Years',kd:'310',inr:'95 K'},
+      {position:'Biomedical Engineer',qualification:"Bachelor's Degree in Biomedical Engineering",experience:'3+ Years',kd:'500',inr:'1.53 LAC'},
+      {position:'Biomedical Technician',qualification:'Diploma in Biomedical Engineering',experience:'3+ Years',kd:'350',inr:'1.07 LAC'},
+      {position:'Pharmacist',qualification:"Bachelor's Degree in Pharmacy",experience:'3+ Years',kd:'300',inr:'92 K'},
+      {position:'Respiratory Therapy Technician',qualification:'Diploma in Pulmonary Functions/Respiratory Therapy',experience:'3+ Years',kd:'300',inr:'92 K'},
+      {position:'Sterilization Technician',qualification:'Diploma in Sterilization',experience:'3+ Years',kd:'300',inr:'92 K'},
+    ],
+    createdAt: Date.now()
+  });
+  saveProjects();
+}
+
+function counts(team){
+  const list = state.projects.filter(p=>p.team===team);
+  return {
+    active: list.filter(p=>p.status==='active').length,
+    upcoming: list.filter(p=>p.status==='upcoming').length,
+    completed: list.filter(p=>p.status==='completed').length,
+    total: list.length
+  };
+}
+
+function esc(s){
+  if(s===undefined||s===null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---------------- RENDER: STAFF VIEW ----------------
+function renderStaff(){
+  const hc = counts('healthcare');
+  const tc = counts('technical');
+  const cur = state.team==='healthcare'? hc : tc;
+  const filtered = state.projects.filter(p=>p.team===state.team && p.status===state.status);
+
+  const dateStr = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  let cardsHtml = '';
+  if(filtered.length===0){
+    cardsHtml = `<div class="empty">
+      <span class="serif">No ${esc(state.status)} projects here yet</span>
+      When your admin adds a ${esc(state.status)} project for this team, it'll show up on this board.
+    </div>`;
+  } else {
+    cardsHtml = filtered.map(p=>`
+      <div class="pcard">
+        <div class="team-band ${p.team}"></div>
+        <div class="route"><b>${esc(p.origin||'India')}</b> → ${esc(p.destination||p.client||'')}</div>
+        <h3>${esc(p.title)}</h3>
+        <div class="tagrow">
+          ${p.ageLimit?`<span class="tag tag-age">Age ≤ ${esc(p.ageLimit)}</span>`:''}
+          ${p.experience?`<span class="tag tag-exp">${esc(p.experience)}</span>`:''}
+          ${p.gender?`<span class="tag tag-gender">${esc(p.gender)}</span>`:''}
+        </div>
+        <div class="foot">
+          <span class="charge-badge">${esc(p.serviceCharge||'—')}</span>
+          <button class="view-btn" onclick="openModal('${p.id}')">View manifest</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  return `
+    <div class="topbar">
+      <div class="brand">
+        <span class="mark">GOWELL INTERNATIONAL</span>
+        <span class="sub">Project Hub</span>
+      </div>
+      <button class="admin-link" onclick="goAdmin()">Admin</button>
+    </div>
+    <div class="team-strip">
+      <button class="team-tab ${state.team==='healthcare'?'active':''}" data-team="healthcare" onclick="setTeam('healthcare')">
+        HEALTH CARE <span class="count">${hc.total}</span>
+      </button>
+      <button class="team-tab ${state.team==='technical'?'active':''}" data-team="technical" onclick="setTeam('technical')">
+        TECHNICAL <span class="count">${tc.total}</span>
+      </button>
+    </div>
+    <div class="status-row">
+      <button class="status-pill ${state.status==='active'?'active-pill':''}" onclick="setStatus('active')">Active <span class="n">${cur.active}</span></button>
+      <button class="status-pill ${state.status==='upcoming'?'active-pill':''}" onclick="setStatus('upcoming')">Upcoming <span class="n">${cur.upcoming}</span></button>
+      <button class="status-pill ${state.status==='completed'?'active-pill':''}" onclick="setStatus('completed')">Completed <span class="n">${cur.completed}</span></button>
+      <span class="board-date">Updated ${dateStr}</span>
+    </div>
+    <div class="grid">${cardsHtml}</div>
+    ${state.modalProject ? renderModal(state.modalProject) : ''}
+    ${state.toast ? `<div class="toast">${esc(state.toast)}</div>` : ''}
+  `;
+}
+
+function renderModal(p){
+  const posRows = (p.positions||[]).map(r=>`
+    <tr>
+      <td>${esc(r.position)}</td>
+      <td>${esc(r.qualification)}</td>
+      <td>${esc(r.experience)}</td>
+      <td class="num">${esc(r.kd)}</td>
+      <td class="num">${esc(r.inr)}</td>
+    </tr>`).join('');
+
+  return `
+    <div class="overlay" onclick="closeModalBg(event)">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="route"><b>${esc(p.origin||'India')}</b> → ${esc(p.destination||p.client||'')}</div>
+        <h2>${esc(p.title)}</h2>
+        <div class="detail-grid">
+          <div><div class="k">Client</div>${esc(p.client)}</div>
+          <div><div class="k">Status</div>${p.status.toUpperCase()}</div>
+          <div><div class="k">Eligibility</div>${esc(p.gender)}${p.gender&&p.ageLimit?', ':''}${p.ageLimit?('Age ≤ '+esc(p.ageLimit)):''}</div>
+          <div><div class="k">Experience</div>${esc(p.experience)}</div>
+          <div><div class="k">Prometric</div>${esc(p.prometric)}</div>
+          <div><div class="k">Passport validity</div>${esc(p.passportValidity)}</div>
+          <div><div class="k">Service charge</div>${esc(p.serviceCharge)}</div>
+          <div><div class="k">Package includes</div>${esc(p.packageIncludes)}</div>
+        </div>
+        ${p.benefits?`<div class="section-label">Benefits</div><div>${esc(p.benefits)}</div>`:''}
+        ${(p.positions&&p.positions.length)?`
+        <div class="section-label">Positions</div>
+        <div class="ledger-wrap">
+        <table class="ledger">
+          <thead><tr><th>Position</th><th>Qualification</th><th>Experience</th><th class="num">KD</th><th class="num">INR</th></tr></thead>
+          <tbody>${posRows}</tbody>
+        </table>
+        </div>`:''}
+        ${p.remarks?`<div class="section-label">Remarks</div><div>${esc(p.remarks)}</div>`:''}
+      </div>
+    </div>
+  `;
+}
+
+// ---------------- RENDER: ADMIN LOGIN / SETUP ----------------
+async function renderAdminGate(){
+  let hasPass = true;
+  try{
+    await window.storage.get(PASS_KEY, true);
+  }catch(e){ hasPass = false; }
+
+  if(!hasPass){
+    state.view = 'admin-setup';
+  }
+  render();
+}
+
+function renderAdminLogin(){
+  return `
+    <div class="topbar">
+      <div class="brand"><span class="mark">GOWELL INTERNATIONAL</span><span class="sub">Project Hub</span></div>
+      <button class="admin-link" onclick="goStaff()">← Staff view</button>
+    </div>
+    <div class="admin-shell">
+      <div class="login-card">
+        <h2>Admin Login</h2>
+        <div class="field" style="text-align:left">
+          <label>Password</label>
+          <input type="password" id="loginPass" placeholder="Enter admin password" />
+        </div>
+        ${state.loginError?`<div style="color:var(--rust);font-size:12.5px;margin-bottom:10px;">${esc(state.loginError)}</div>`:''}
+        <button class="primary-btn" style="width:100%" onclick="tryLogin()">Log in</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminSetup(){
+  return `
+    <div class="topbar">
+      <div class="brand"><span class="mark">GOWELL INTERNATIONAL</span><span class="sub">Project Hub</span></div>
+      <button class="admin-link" onclick="goStaff()">← Staff view</button>
+    </div>
+    <div class="admin-shell">
+      <div class="login-card">
+        <h2>Set up Admin Access</h2>
+        <p style="font-size:13px;color:var(--muted);margin-top:-8px;">No admin password exists yet. Create one now — anyone with this password can add or edit projects.</p>
+        <div class="field" style="text-align:left">
+          <label>New password</label>
+          <input type="password" id="setupPass" placeholder="Choose a password" />
+        </div>
+        <button class="primary-btn" style="width:100%" onclick="createAdminPass()">Create & log in</button>
+      </div>
+    </div>
+  `;
+}
+
+// ---------------- RENDER: ADMIN PANEL ----------------
+function blankProject(){
+  return {
+    id:null, team:'healthcare', status:'active', title:'', client:'',
+    origin:'Kerala, India', destination:'', gender:'', ageLimit:'', experience:'',
+    prometric:'', passportValidity:'', serviceCharge:'', packageIncludes:'',
+    benefits:'', remarks:'', positions:[{position:'',qualification:'',experience:'',kd:'',inr:''}]
+  };
+}
+
+function renderAdmin(){
+  const p = state.editingProject;
+  const list = state.projects.slice().sort((a,b)=>b.createdAt-a.createdAt);
+
+  let formHtml = '';
+  if(state.showForm && p){
+    const posRows = p.positions.map((r,i)=>`
+      <div class="pos-row">
+        <input placeholder="Position" value="${esc(r.position)}" oninput="updatePos(${i},'position',this.value)"/>
+        <input placeholder="Qualification" value="${esc(r.qualification)}" oninput="updatePos(${i},'qualification',this.value)"/>
+        <input placeholder="Experience" value="${esc(r.experience)}" oninput="updatePos(${i},'experience',this.value)"/>
+        <input placeholder="KD" value="${esc(r.kd)}" oninput="updatePos(${i},'kd',this.value)"/>
+        <input placeholder="INR" value="${esc(r.inr)}" oninput="updatePos(${i},'inr',this.value)"/>
+        <button class="remove-x" onclick="removePos(${i})" title="Remove row">✕</button>
+      </div>
+    `).join('');
+
+    formHtml = `
+      <div class="form-card">
+        <h3>${p.id? 'Edit project':'New project'}</h3>
+        <div class="row2">
+          <div class="field"><label>Team</label>
+            <select id="f_team" onchange="updateField('team',this.value)">
+              <option value="healthcare" ${p.team==='healthcare'?'selected':''}>Health Care</option>
+              <option value="technical" ${p.team==='technical'?'selected':''}>Technical</option>
+            </select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select id="f_status" onchange="updateField('status',this.value)">
+              <option value="upcoming" ${p.status==='upcoming'?'selected':''}>Upcoming</option>
+              <option value="active" ${p.status==='active'?'selected':''}>Active</option>
+              <option value="completed" ${p.status==='completed'?'selected':''}>Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Project title</label>
+          <input value="${esc(p.title)}" oninput="updateField('title',this.value)" placeholder="e.g. Kuwait Govt Healthcare — National Guard"/>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Client / employer</label><input value="${esc(p.client)}" oninput="updateField('client',this.value)"/></div>
+          <div class="field"><label>Destination country</label><input value="${esc(p.destination)}" oninput="updateField('destination',this.value)"/></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Gender requirement</label><input value="${esc(p.gender)}" oninput="updateField('gender',this.value)" placeholder="e.g. Male candidates only"/></div>
+          <div class="field"><label>Maximum age</label><input value="${esc(p.ageLimit)}" oninput="updateField('ageLimit',this.value)" placeholder="e.g. 38 years"/></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Experience required</label><input value="${esc(p.experience)}" oninput="updateField('experience',this.value)"/></div>
+          <div class="field"><label>Prometric</label><input value="${esc(p.prometric)}" oninput="updateField('prometric',this.value)" placeholder="e.g. Not required before interview"/></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Passport validity</label><input value="${esc(p.passportValidity)}" oninput="updateField('passportValidity',this.value)"/></div>
+          <div class="field"><label>Service charge</label><input value="${esc(p.serviceCharge)}" oninput="updateField('serviceCharge',this.value)" placeholder="e.g. ₹4.75 – ₹5.50 Lakhs"/></div>
+        </div>
+        <div class="field"><label>Package includes</label><input value="${esc(p.packageIncludes)}" oninput="updateField('packageIncludes',this.value)" placeholder="e.g. DD, Ticket charges, Visa stamping"/></div>
+        <div class="field"><label>Benefits</label><textarea oninput="updateField('benefits',this.value)">${esc(p.benefits)}</textarea></div>
+        <div class="field"><label>Remarks (internal)</label><textarea oninput="updateField('remarks',this.value)">${esc(p.remarks)}</textarea></div>
+
+        <label>Positions</label>
+        ${posRows}
+        <button class="ghost-btn" onclick="addPos()">+ Add position</button>
+
+        <div style="margin-top:20px;display:flex;gap:10px;">
+          <button class="primary-btn" onclick="saveProject()">Save project</button>
+          <button class="ghost-btn" onclick="cancelForm()">Cancel</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const listHtml = list.length ? list.map(pr=>`
+    <div class="adminrow">
+      <div>
+        <div style="font-weight:500">${esc(pr.title)}</div>
+        <div class="meta">${pr.team.toUpperCase()} · ${pr.status.toUpperCase()} · ${esc(pr.destination||pr.client||'')}</div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;">
+        <button class="ghost-btn" onclick="editProject('${pr.id}')">Edit</button>
+        <button class="danger-link" onclick="deleteProject('${pr.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('') : `<div class="adminrow"><span class="meta">No projects added yet.</span></div>`;
+
+  return `
+    <div class="topbar">
+      <div class="brand"><span class="mark">GOWELL INTERNATIONAL</span><span class="sub">Project Hub · Admin</span></div>
+      <button class="admin-link" onclick="goStaff()">← Staff view</button>
+    </div>
+    <div class="admin-shell">
+      <div class="admin-header">
+        <h1>Manage Projects</h1>
+        ${!state.showForm ? `<button class="primary-btn" onclick="newProject()">+ New project</button>` : ''}
+      </div>
+      ${formHtml}
+      <div class="adminlist">${listHtml}</div>
+    </div>
+    ${state.toast ? `<div class="toast">${esc(state.toast)}</div>` : ''}
+  `;
+}
+
+// ---------------- ACTIONS ----------------
+window.setTeam = (t)=>{ state.team=t; state.status='active'; render(); };
+window.setStatus = (s)=>{ state.status=s; render(); };
+window.openModal = (id)=>{ state.modalProject = state.projects.find(p=>p.id===id); render(); };
+window.closeModal = ()=>{ state.modalProject=null; render(); };
+window.closeModalBg = (e)=>{ if(e.target.classList.contains('overlay')) closeModal(); };
+window.goStaff = ()=>{ state.view='staff'; state.showForm=false; render(); };
+window.goAdmin = async ()=>{ state.view='admin-login'; state.loginError=''; render(); await renderAdminGate(); };
+
+window.tryLogin = async ()=>{
+  const val = document.getElementById('loginPass').value;
+  try{
+    const res = await window.storage.get(PASS_KEY, true);
+    if(res && res.value === val){
+      state.view='admin'; state.loginError=''; render();
+    } else {
+      state.loginError='Incorrect password.'; render();
+    }
+  }catch(e){
+    state.loginError='No password set yet.'; render();
+  }
+};
+
+window.createAdminPass = async ()=>{
+  const val = document.getElementById('setupPass').value;
+  if(!val || val.length<4){ state.loginError='Password must be at least 4 characters.'; render(); return; }
+  try{
+    await window.storage.set(PASS_KEY, val, true);
+    state.view='admin'; render();
+    showToast('Admin password created.');
+  }catch(e){
+    showToast('Could not save password — try again.');
+  }
+};
+
+window.newProject = ()=>{ state.editingProject = blankProject(); state.showForm=true; render(); };
+window.editProject = (id)=>{
+  const pr = state.projects.find(p=>p.id===id);
+  state.editingProject = JSON.parse(JSON.stringify(pr));
+  state.showForm=true; render();
+};
+window.cancelForm = ()=>{ state.showForm=false; state.editingProject=null; render(); };
+window.updateField = (k,v)=>{ state.editingProject[k]=v; };
+window.updatePos = (i,k,v)=>{ state.editingProject.positions[i][k]=v; };
+window.addPos = ()=>{ state.editingProject.positions.push({position:'',qualification:'',experience:'',kd:'',inr:''}); render(); };
+window.removePos = (i)=>{ state.editingProject.positions.splice(i,1); render(); };
+
+window.saveProject = async ()=>{
+  const p = state.editingProject;
+  if(!p.title.trim()){ showToast('Please add a project title.'); return; }
+  if(p.id){
+    const idx = state.projects.findIndex(x=>x.id===p.id);
+    state.projects[idx] = p;
+  } else {
+    p.id = uid();
+    p.createdAt = Date.now();
+    state.projects.push(p);
+  }
+  await saveProjects();
+  state.showForm=false; state.editingProject=null;
+  render();
+  showToast('Project saved.');
+};
+
+window.deleteProject = async (id)=>{
+  if(!confirm('Delete this project? This cannot be undone.')) return;
+  state.projects = state.projects.filter(p=>p.id!==id);
+  await saveProjects();
+  render();
+  showToast('Project deleted.');
+};
+
+// ---------------- MAIN RENDER ----------------
+function render(){
+  const app = document.getElementById('app');
+  if(!state.loaded){
+    app.innerHTML = `<div class="loading-note">Loading project board…</div>`;
+    return;
+  }
+  if(state.view==='staff') app.innerHTML = renderStaff();
+  else if(state.view==='admin-login') app.innerHTML = renderAdminLogin();
+  else if(state.view==='admin-setup') app.innerHTML = renderAdminSetup();
+  else if(state.view==='admin') app.innerHTML = renderAdmin();
+}
+
+(async function init(){
+  await loadProjects();
+  seedIfEmpty();
+  render();
+})();
+</script>
+</body>
+</html>
