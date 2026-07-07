@@ -342,6 +342,12 @@
   .remove-x{background:none;border:none;color:var(--rust);font-size:16px;}
   .form-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:24px;}
   .form-card h3{font-family:'Fraunces',serif;margin-top:0;}
+  .cf-section{margin-top:24px;padding-top:18px;border-top:2px dashed var(--line);}
+  .cf-hint{font-size:12.5px;color:var(--muted);margin:2px 0 14px 0;}
+  .cf-row{
+    background:var(--paper);border:1px solid var(--line);border-radius:5px;
+    padding:16px;margin-bottom:12px;
+  }
   .toast{
     position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
     background:var(--ink);color:#fff;padding:12px 22px;border-radius:4px;font-size:13.5px;
@@ -558,6 +564,13 @@ function renderModal(p){
           <tbody>${posRows}</tbody>
         </table>
         </div>`:''}
+        ${(p.customFields&&p.customFields.length)?`
+        <div class="section-label">Additional Details</div>
+        <div class="detail-grid">
+          ${p.customFields.filter(f=>f.label).map(f=>`
+            <div><div class="k">${esc(f.label)}</div>${esc(f.value)||'—'}</div>
+          `).join('')}
+        </div>`:''}
         ${p.remarks?`<div class="section-label">Remarks</div><div>${esc(p.remarks)}</div>`:''}
       </div>
     </div>
@@ -623,7 +636,8 @@ function blankProject(){
     id:null, team:'healthcare', status:'active', title:'', client:'',
     origin:'Kerala, India', destination:'', gender:'', ageLimit:'', experience:'',
     prometric:'', passportValidity:'', serviceCharge:'', packageIncludes:'',
-    benefits:'', remarks:'', positions:[{position:'',qualification:'',experience:'',kd:'',inr:''}]
+    benefits:'', remarks:'', positions:[{position:'',qualification:'',experience:'',kd:'',inr:''}],
+    customFields:[]
   };
 }
 
@@ -633,6 +647,7 @@ function renderAdmin(){
 
   let formHtml = '';
   if(state.showForm && p){
+    if(!p.customFields) p.customFields = [];
     const posRows = p.positions.map((r,i)=>`
       <div class="pos-row">
         <input placeholder="Position" value="${esc(r.position)}" oninput="updatePos(${i},'position',this.value)"/>
@@ -643,6 +658,20 @@ function renderAdmin(){
         <button class="remove-x" onclick="removePos(${i})" title="Remove row">✕</button>
       </div>
     `).join('');
+
+    const customFieldsHtml = p.customFields.map((f,i)=>`
+        <div class="cf-row">
+          <div class="row2">
+            <div class="field"><label>Heading</label>
+              <input placeholder="e.g. Driving licence required?" value="${esc(f.label)}" oninput="updateCustomField(${i},'label',this.value)"/>
+            </div>
+            <div class="field"><label>Text</label>
+              <input placeholder="e.g. Not required" value="${esc(f.value)}" oninput="updateCustomField(${i},'value',this.value)"/>
+            </div>
+          </div>
+          <button class="ghost-btn" onclick="removeCustomField(${i})">Remove this header</button>
+        </div>
+      `).join('');
 
     formHtml = `
       <div class="form-card">
@@ -688,6 +717,13 @@ function renderAdmin(){
         <label>Positions</label>
         ${posRows}
         <button class="ghost-btn" onclick="addPos()">+ Add position</button>
+
+        <div class="cf-section">
+          <label>Custom Headers</label>
+          <div class="cf-hint">Add your own heading for this project, then type the text that should appear under it.</div>
+          ${customFieldsHtml}
+          <button class="ghost-btn" onclick="addCustomField()">+ Add header</button>
+        </div>
 
         <div style="margin-top:20px;display:flex;gap:10px;">
           <button class="primary-btn" onclick="saveProject()">Save project</button>
@@ -773,6 +809,14 @@ window.updateField = (k,v)=>{ state.editingProject[k]=v; };
 window.updatePos = (i,k,v)=>{ state.editingProject.positions[i][k]=v; };
 window.addPos = ()=>{ state.editingProject.positions.push({position:'',qualification:'',experience:'',kd:'',inr:''}); render(); };
 window.removePos = (i)=>{ state.editingProject.positions.splice(i,1); render(); };
+
+window.addCustomField = ()=>{
+  if(!state.editingProject.customFields) state.editingProject.customFields = [];
+  state.editingProject.customFields.push({label:'', value:''});
+  render();
+};
+window.updateCustomField = (i,key,val)=>{ state.editingProject.customFields[i][key]=val; };
+window.removeCustomField = (i)=>{ state.editingProject.customFields.splice(i,1); render(); };
 
 window.saveProject = async ()=>{
   const p = state.editingProject;
