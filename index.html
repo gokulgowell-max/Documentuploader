@@ -388,7 +388,7 @@
     <!-- Global Navigation Header bar -->
     <nav class="glass-nav py-4 px-6 flex justify-between items-center shadow-lg">
       <div class="flex items-center gap-3">
-        <span class="text-2xl font-black logo-gradient">Document Uploader</span>
+        <span class="text-2xl font-black logo-gradient">Dynamic Document Hub</span>
         <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="System Connected"></span>
       </div>
       <div class="flex items-center gap-3">
@@ -2007,29 +2007,50 @@
               const self = window.google.script.run;
               const success = self._successHandler;
               const failure = self._failureHandler;
-              
+
               // Reset handlers for next call
               self._successHandler = null;
               self._failureHandler = null;
 
+              // Timeout controller — fail after 30s so the UI never hangs
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => {
+                controller.abort();
+              }, 30000);
+
+              // Apps Script requires text/plain (no preflight) + redirect:follow
+              // Do NOT set mode:'cors' — the browser handles the 302→googleusercontent redirect
               fetch(APPS_SCRIPT_API_URL, {
-                method: "POST",
-                mode: "cors",
+                method: 'POST',
+                redirect: 'follow',
+                signal: controller.signal,
                 headers: {
-                  "Content-Type": "text/plain"
+                  'Content-Type': 'text/plain'
                 },
                 body: JSON.stringify({ action: method, args: args })
               })
-              .then(res => res.json())
               .then(res => {
-                if (res.success) {
-                  if (success) success(res.data);
-                } else {
-                  if (failure) failure(new Error(res.error));
+                clearTimeout(timeoutId);
+                return res.text();
+              })
+              .then(text => {
+                try {
+                  const res = JSON.parse(text);
+                  if (res.success) {
+                    if (success) success(res.data);
+                  } else {
+                    if (failure) failure(new Error(res.error || 'Server error'));
+                  }
+                } catch(parseErr) {
+                  if (failure) failure(new Error('Invalid response from server. Check that your Apps Script is deployed as a Web App with access set to Anyone.'));
                 }
               })
               .catch(err => {
-                if (failure) failure(err);
+                clearTimeout(timeoutId);
+                const msg = err.name === 'AbortError'
+                  ? 'Request timed out. Check your Apps Script URL and make sure the Web App is deployed.'
+                  : 'Connection failed: ' + err.message;
+                if (failure) failure(new Error(msg));
               });
             };
           });
@@ -2257,6 +2278,25 @@
         const btn = document.getElementById('navToggleBtn');
 
         if (currentView === 'user') {
+
+          // Guard: if we are on static hosting (GitHub Pages) and no API URL
+          // has been configured yet, google.script.run will be undefined and
+          // the login will hang. Show a clear setup prompt instead.
+          const isInsideAppsScript = window.google && google.script &&
+            google.script.run &&
+            typeof google.script.run.checkManagerPasscode === 'function';
+          const hasApiUrl = !!(localStorage.getItem('appsScriptApiUrl') || '').trim();
+
+          if (!isInsideAppsScript && !hasApiUrl) {
+            await showAlertModal(
+              'No backend connection is configured yet.\n\nTo log in as Manager, first set up the Google Apps Script URL:\n\n1. Click OK to open Connection Settings\n2. Paste your Apps Script Web App URL\n3. Click "Connect Backend"\n4. Then try Manager Login again.',
+              'Backend Not Connected',
+              'info'
+            );
+            openApiSettingsModal();
+            return;
+          }
+
           const attempt = await showManagerLoginModal();
           if (!attempt) return;
 
