@@ -1,0 +1,662 @@
+<!-- Custom styles for UserForm -->
+<style>
+  .section-title {
+    background: linear-gradient(95deg, #a5b4fc 0%, #e9d5ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  .upload-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .upload-zone.dragover {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.04);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+  }
+  .upload-zone:hover:not(.has-file) {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  /* Skeleton loader styles */
+  .skeleton-field {
+    height: 40px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-wave 1.6s infinite linear;
+    border-radius: 10px;
+  }
+  .skeleton-label {
+    width: 35%;
+    height: 14px;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-wave 1.6s infinite linear;
+    border-radius: 4px;
+  }
+  @keyframes skeleton-wave {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Progress Bar styles */
+  .progress-container {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: var(--accent-grad);
+    width: 0%;
+    height: 100%;
+    transition: width 0.4s ease-out;
+  }
+</style>
+
+<!-- Uploader Form Card -->
+<div class="glass-card max-w-2xl mx-auto p-6 sm:p-8">
+  <h2 class="text-2xl font-extrabold mb-6 section-title border-b border-gray-800 pb-3">Upload Candidate Document</h2>
+
+  <form id="uploadSubmissionForm" onsubmit="processDocumentFormSubmit(event)">
+    
+    <!-- Recruiter and Project selectors -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Recruiter Name</label>
+        <select id="formRecruiterSelect" class="input-premium w-full p-3 rounded-xl text-sm bg-gray-900 border" required>
+          <option value="">-- Choose Name --</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Assign to Project</label>
+        <select id="formProjectSelect" onchange="renderDynamicFieldsInstantly(this.value)" class="input-premium w-full p-3 rounded-xl text-sm bg-gray-900 border" required>
+          <option value="">-- Choose Project Track --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Identity details inputs -->
+    <div class="p-5 rounded-2xl bg-black bg-opacity-30 border border-white border-opacity-5 space-y-4 mb-6">
+      <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Mandatory Identity Details</h3>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Candidate Name (As Per The Passport Only)</label>
+        <input type="text" id="formCandidateName" class="input-premium w-full p-3 rounded-xl uppercase text-sm" required placeholder="JOHN DOE" oninput="this.value = this.value.toUpperCase()">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Passport Number (Letters & Numbers Only - No Spaces)</label>
+        <input type="text" id="formPassportNumber" pattern="^[A-Za-z0-9]+$" class="input-premium w-full p-3 rounded-xl uppercase text-sm" required placeholder="A1234567" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Mobile Contact Number(s)</label>
+        <div id="phoneInputsContainer" class="space-y-3">
+          <div class="flex gap-2 phone-row">
+            <select class="p-3 rounded-xl country-code-select bg-gray-900 border border-white border-opacity-10 text-xs text-white max-w-[130px]" required></select>
+            <input type="text" pattern="^[0-9]+$" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="input-premium flex-1 p-3 rounded-xl text-sm phone-digits" placeholder="9876543210" required>
+          </div>
+        </div>
+        <button type="button" onclick="addPhoneRow()" class="text-xs text-indigo-400 font-bold mt-2.5 inline-flex items-center gap-1 hover:underline hover:text-indigo-300">
+          <span>+ Add Backup Number</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dynamic fields render container -->
+    <div id="dynamicFieldsContainer" class="space-y-4 mb-6"></div>
+
+    <!-- Optional Remarks Notes -->
+    <div class="mb-6">
+      <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Remarks / Notes (Optional)</label>
+      <textarea id="formRemarks" rows="2" maxlength="1000" placeholder="Anything worth noting about this candidate or document..." class="input-premium w-full p-3 rounded-xl text-sm resize-y"></textarea>
+    </div>
+
+    <!-- Drag zone element -->
+    <div class="mb-6">
+      <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Select Document Asset (PDF Only, max 15MB)</label>
+      <input type="file" id="formFileInput" accept=".pdf,application/pdf" class="hidden" required>
+      
+      <div id="dropZone" class="upload-zone flex flex-col items-center justify-center gap-2" onclick="document.getElementById('formFileInput').click()">
+        <div class="text-3xl text-indigo-400 mb-1" id="uploadIcon">📄</div>
+        <div id="uploadPrompt" class="text-sm font-semibold text-gray-300">Drag & Drop PDF here or <span class="text-indigo-400">Browse</span></div>
+        <div id="fileHintText" class="text-xs text-gray-500">Maximum file size: 15MB</div>
+      </div>
+    </div>
+
+    <!-- Upload simulated progress bar overlay -->
+    <div id="uploadProgressWrapper" class="hidden space-y-2 mb-6">
+      <div class="flex justify-between text-xs font-bold text-indigo-400">
+        <span id="progressStatusText">Preparing file upload...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-container">
+        <div id="progressBarFill" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Form Submit Action -->
+    <button type="submit" id="submitBtn" class="w-full btn-premium-gradient py-3.5 rounded-xl transition shadow-lg text-base">
+      Execute Document Upload
+    </button>
+  </form>
+</div>
+
+<!-- Recruiter Submissions History Card -->
+<div id="recruiterHistoryCard" class="glass-card max-w-2xl mx-auto p-6 mt-6 hidden">
+  <h3 class="text-lg font-bold text-indigo-400 mb-3 border-b border-gray-800 pb-2.5 flex items-center justify-between">
+    <span>Your Uploaded Candidates</span>
+    <span id="historyCountBadge" class="text-xs bg-indigo-950 bg-opacity-40 text-indigo-300 px-2.5 py-1 rounded-full font-bold border border-indigo-900 border-opacity-30">0 Total</span>
+  </h3>
+  <div class="overflow-x-auto border border-white border-opacity-5 rounded-xl bg-black bg-opacity-25 max-h-60">
+    <table class="min-w-full text-xs text-left text-gray-400">
+      <thead class="bg-gray-900 text-gray-300 uppercase font-bold border-b border-gray-800">
+        <tr>
+          <th class="p-3">Candidate Name</th>
+          <th class="p-3">Passport Number</th>
+          <th class="p-3 text-right">Upload Date</th>
+        </tr>
+      </thead>
+      <tbody id="recruiterHistoryBody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let projectCacheMemory = {};
+  let activeDynamicConfig = [];
+  const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; 
+
+  const countryCodes = [
+    { name: "Afghanistan (+93)", code: "93" },
+    { name: "Australia (+61)", code: "61" },
+    { name: "Bangladesh (+880)", code: "880" },
+    { name: "Canada (+1)", code: "1" },
+    { name: "China (+86)", code: "86" },
+    { name: "Germany (+49)", code: "49" },
+    { name: "India (+91)", code: "91", default: true },
+    { name: "Kuwait (+965)", code: "965" },
+    { name: "Malaysia (+60)", code: "60" },
+    { name: "Oman (+968)", code: "968" },
+    { name: "Pakistan (+92)", code: "92" },
+    { name: "Qatar (+974)", code: "974" },
+    { name: "Saudi Arabia (+966)", code: "966" },
+    { name: "Singapore (+65)", code: "65" },
+    { name: "UAE (+971)", code: "971" },
+    { name: "United Kingdom (+44)", code: "44" },
+    { name: "United States (+1)", code: "1" }
+  ];
+
+  function populateCountryDropdown(selectElement) {
+    selectElement.innerHTML = '';
+    countryCodes.forEach(item => {
+      let opt = new Option(item.name, item.code);
+      if (item.default) opt.selected = true;
+      selectElement.add(opt);
+    });
+  }
+
+  function addPhoneRow() {
+    const container = document.getElementById('phoneInputsContainer');
+    const div = document.createElement('div');
+    div.className = "flex gap-2 phone-row items-center";
+    div.innerHTML = `
+      <select class="p-3 rounded-xl country-code-select bg-gray-900 border border-white border-opacity-10 text-xs text-white max-w-[130px]" required></select>
+      <input type="text" pattern="^[0-9]+$" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="input-premium flex-1 p-3 rounded-xl text-sm phone-digits" placeholder="Alternate No." required>
+      <button type="button" onclick="this.parentElement.remove()" class="text-red-400 font-bold px-2 text-lg hover:text-red-500 transition">✕</button>
+    `;
+    container.appendChild(div);
+    populateCountryDropdown(div.querySelector('.country-code-select'));
+  }
+
+  function initUserInterface() {
+    populateCountryDropdown(document.querySelector('.country-code-select'));
+
+    const pSel = document.getElementById('formProjectSelect');
+    const rSel = document.getElementById('formRecruiterSelect');
+
+    // Check if we have any backend connection at all
+    const hasApi = typeof APPS_SCRIPT_API_URL !== 'undefined' && APPS_SCRIPT_API_URL && APPS_SCRIPT_API_URL.trim();
+    const hasScriptRun = window.google && google.script && google.script.run;
+
+    if (!hasApi && !hasScriptRun) {
+      // No backend configured — show a friendly banner, don't throw an error
+      pSel.innerHTML = '<option value="">-- Connect backend first --</option>';
+      rSel.innerHTML = '<option value="">-- Connect backend first --</option>';
+
+      // Show a non-blocking info banner below the dropdowns
+      const existingBanner = document.getElementById('noBackendBanner');
+      if (!existingBanner) {
+        const banner = document.createElement('div');
+        banner.id = 'noBackendBanner';
+        banner.style.cssText = 'margin:16px 0;padding:14px 18px;border-radius:12px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);display:flex;align-items:center;gap:12px;';
+        banner.innerHTML = `
+          <span style="font-size:1.4rem;">⚙️</span>
+          <div>
+            <div style="font-weight:700;font-size:0.85rem;color:#4f46e5;margin-bottom:2px;">Backend Not Connected</div>
+            <div style="font-size:0.75rem;color:#64748b;line-height:1.5;">
+              To load recruiter names and projects, click <strong>🔒 Manager Workspace</strong> and connect your Google Apps Script backend.
+            </div>
+          </div>
+        `;
+        const formCard = pSel.closest('.glass-card') || pSel.parentElement;
+        if (formCard) formCard.insertBefore(banner, formCard.firstChild);
+      }
+      return;
+    }
+
+    // Loading indicator while fetching
+    pSel.innerHTML = '<option value="">Loading Projects...</option>';
+
+    function renderFormData(data) {
+      rSel.innerHTML = '<option value="">-- Choose Name --</option>';
+      pSel.innerHTML = '<option value="">-- Choose Project Track --</option>';
+
+      data.recruiters.forEach(r => rSel.add(new Option(r, r)));
+
+      projectCacheMemory = {};
+      data.projectsConfig.forEach(p => {
+        pSel.add(new Option(p.name, p.name));
+        projectCacheMemory[p.name] = p.fields;
+      });
+
+      if (data.projectsConfig.length === 0) {
+        pSel.innerHTML = '<option value="">-- No open projects available --</option>';
+      }
+
+      // Remove the no-backend banner if it was showing
+      const banner = document.getElementById('noBackendBanner');
+      if (banner) banner.remove();
+    }
+
+    // Check if we have cached data less than 5 minutes old
+    const cachedStr = sessionStorage.getItem('cachedFormInitData');
+    if (cachedStr) {
+      try {
+        const cache = JSON.parse(cachedStr);
+        if (Date.now() - cache.timestamp < 5 * 60 * 1000) {
+          renderFormData(cache.data);
+          return; // Use cache and skip fetch!
+        }
+      } catch(e) {}
+    }
+
+    google.script.run.withSuccessHandler(function(data) {
+      // Save to cache
+      sessionStorage.setItem('cachedFormInitData', JSON.stringify({ timestamp: Date.now(), data: data }));
+      renderFormData(data);
+    }).withFailureHandler(function(err) {
+      pSel.innerHTML = '<option value="">-- Load failed --</option>';
+      rSel.innerHTML = '<option value="">-- Load failed --</option>';
+      showAlertModal('Could not load form data: ' + (err && err.message ? err.message : String(err)) + '\n\nMake sure your Apps Script is deployed as a Web App with access set to "Anyone".', 'Load Error', 'error');
+    }).getFormInitializationData();
+  }
+
+  document.addEventListener("DOMContentLoaded", initUserInterface);
+
+  // Recruiter submissions history loader
+  document.getElementById('formRecruiterSelect').addEventListener('change', loadRecruiterSubmissionsHistory);
+  document.getElementById('formProjectSelect').addEventListener('change', loadRecruiterSubmissionsHistory);
+
+  function loadRecruiterSubmissionsHistory() {
+    const recruiter = document.getElementById('formRecruiterSelect').value;
+    const project = document.getElementById('formProjectSelect').value;
+    const card = document.getElementById('recruiterHistoryCard');
+    const tbody = document.getElementById('recruiterHistoryBody');
+    const countBadge = document.getElementById('historyCountBadge');
+
+    if (!recruiter || !project) {
+      card.classList.add('hidden');
+      tbody.innerHTML = '';
+      return;
+    }
+
+    card.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500 italic">Retrieving your submission history...</td></tr>';
+    countBadge.innerText = "Querying...";
+
+    google.script.run
+      .withSuccessHandler(function(history) {
+        tbody.innerHTML = '';
+        countBadge.innerText = `${history.length} Total`;
+
+        if (history.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500 italic">No candidates uploaded by you for this project yet.</td></tr>';
+          return;
+        }
+
+        history.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-gray-850 hover-highlight-row text-gray-300 font-medium';
+          
+          const dateStr = new Date(item.timestamp).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+
+          tr.innerHTML = `
+            <td class="p-3 font-bold text-gray-200">${escapeHtml_(item.candidateName)}</td>
+            <td class="p-3 text-gray-400 font-mono">${escapeHtml_(item.passportNumber)}</td>
+            <td class="p-3 text-right text-gray-500">${dateStr}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      })
+      .withFailureHandler(function(err) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-500">Error loading history: ${escapeHtml_(err.message)}</td></tr>`;
+        countBadge.innerText = "Error";
+      })
+      .getRecruiterSubmissionsHistory(project, recruiter);
+  }
+
+  function renderDynamicFieldsInstantly(projectName) {
+    const container = document.getElementById('dynamicFieldsContainer');
+    container.innerHTML = "";
+    activeDynamicConfig = [];
+
+    if (!projectName) return;
+
+    if (!projectCacheMemory[projectName]) {
+      container.innerHTML = `
+        <div class="skeleton-label"></div>
+        <div class="skeleton-field mb-4"></div>
+        <div class="skeleton-label"></div>
+        <div class="skeleton-field"></div>
+      `;
+      return;
+    }
+
+    const fields = projectCacheMemory[projectName];
+    activeDynamicConfig = fields;
+
+    if (fields.length > 0) {
+      const header = document.createElement('h3');
+      header.className = "text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3 mt-1";
+      header.innerText = "Project Specific Requirements";
+      container.appendChild(header);
+    }
+
+    fields.forEach(field => {
+      const div = document.createElement('div');
+      div.className = "mb-4";
+
+      const label = document.createElement('label');
+      label.className = "block text-xs font-semibold text-gray-400 mb-2";
+      label.innerText = field.label;
+      div.appendChild(label);
+
+      if (field.type === 'dropdown') {
+        const select = document.createElement('select');
+        select.id = "dyn_" + field.id;
+        select.className = "input-premium w-full p-3 rounded-xl text-sm bg-gray-900 border dynamic-field-input";
+        select.required = true;
+        select.add(new Option("-- Select --", ""));
+        field.options.forEach(opt => select.add(new Option(opt, opt)));
+        div.appendChild(select);
+      } else {
+        const input = document.createElement('input');
+        input.id = "dyn_" + field.id;
+        input.type = field.type; // Text, date, or number sets input type natively
+        input.className = "input-premium w-full p-3 rounded-xl text-sm bg-gray-900 border dynamic-field-input";
+        input.required = true;
+        div.appendChild(input);
+      }
+      container.appendChild(div);
+    });
+  }
+
+  function resetPhoneRows() {
+    document.getElementById('phoneInputsContainer').innerHTML = `
+      <div class="flex gap-2 phone-row">
+        <select class="p-3 rounded-xl country-code-select bg-gray-900 border border-white border-opacity-10 text-xs text-white max-w-[130px]" required></select>
+        <input type="text" pattern="^[0-9]+$" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="input-premium flex-1 p-3 rounded-xl text-sm phone-digits" placeholder="9876543210" required>
+      </div>`;
+    populateCountryDropdown(document.querySelector('.country-code-select'));
+  }
+
+  // drag-and-drop listeners
+  const fileInput = document.getElementById('formFileInput');
+  const dropZone = document.getElementById('dropZone');
+  const uploadIcon = document.getElementById('uploadIcon');
+  const uploadPrompt = document.getElementById('uploadPrompt');
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    }, false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files.length) {
+      fileInput.files = files;
+      handleFileSelected();
+    }
+  });
+
+  fileInput.addEventListener('change', handleFileSelected);
+
+  function handleFileSelected() {
+    const file = fileInput.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        showAlertModal('Only PDF documents are accepted.', 'Invalid File Type', 'error');
+        fileInput.value = '';
+        resetDropZone();
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        showAlertModal('File size exceeds the 15MB limit.', 'File Too Large', 'error');
+        fileInput.value = '';
+        resetDropZone();
+        return;
+      }
+      
+      dropZone.classList.add('has-file');
+      uploadIcon.innerText = '✅';
+      uploadPrompt.innerHTML = `<span class="text-green-400 font-bold">${file.name}</span> (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+      
+      const cancelLink = document.createElement('div');
+      cancelLink.id = "cancelUploadLink";
+      cancelLink.className = "text-xs text-red-400 font-semibold hover:underline mt-1 cursor-pointer";
+      cancelLink.innerText = "✕ Remove File";
+      cancelLink.onclick = (e) => {
+        e.stopPropagation();
+        fileInput.value = '';
+        resetDropZone();
+      };
+      
+      const oldLink = document.getElementById('cancelUploadLink');
+      if (oldLink) oldLink.remove();
+      dropZone.appendChild(cancelLink);
+    }
+  }
+
+  function resetDropZone() {
+    dropZone.classList.remove('has-file');
+    uploadIcon.innerText = '📄';
+    uploadPrompt.innerHTML = `Drag & Drop PDF here or <span class="text-indigo-400">Browse</span>`;
+    const oldLink = document.getElementById('cancelUploadLink');
+    if (oldLink) oldLink.remove();
+  }
+
+  async function processDocumentFormSubmit(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submitBtn');
+    const fileEl = fileInput.files[0];
+
+    if (!fileEl) {
+      await showAlertModal('Please select a PDF document to upload.', 'Missing Document', 'error');
+      return;
+    }
+
+    const projectVal = document.getElementById('formProjectSelect').value;
+    const passportVal = document.getElementById('formPassportNumber').value;
+    const currentRecruiter = document.getElementById('formRecruiterSelect').value;
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Checking for duplicates...";
+    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+    let duplicateCheck;
+    try {
+      duplicateCheck = await new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .checkDuplicatePassport(projectVal, passportVal);
+      });
+    } catch(err) {
+      console.warn("Duplicate check failed, proceeding anyway", err);
+      duplicateCheck = { isDuplicate: false };
+    }
+
+    let overrideDuplicate = null;
+    if (duplicateCheck && duplicateCheck.isDuplicate) {
+      if (duplicateCheck.uploadedBy.trim().toLowerCase() !== currentRecruiter.trim().toLowerCase()) {
+        await showAlertModal("Already submited this candidate by " + duplicateCheck.uploadedBy, "Duplicate Found", "error");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Execute Document Upload";
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        return;
+      } else {
+        const confirm = await showConfirmModal("Already sumbitted this candidate by " + duplicateCheck.uploadedBy + ". Want to remove existing and upload new file?", "Duplicate Found");
+        if (!confirm) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Execute Document Upload";
+          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          return;
+        }
+        overrideDuplicate = { rowIdx: duplicateCheck.rowIdx, fileUrl: duplicateCheck.fileUrl };
+      }
+    }
+
+    submitBtn.innerText = "Processing Document...";
+
+    const progressWrapper = document.getElementById('uploadProgressWrapper');
+    const progressBar = document.getElementById('progressBarFill');
+    const progressText = document.getElementById('progressStatusText');
+    const progressPercent = document.getElementById('progressPercent');
+
+    progressWrapper.classList.remove('hidden');
+    progressBar.style.width = '0%';
+    progressText.innerText = "Converting document to binary stream...";
+    progressPercent.innerText = "0%";
+
+    let uploadProgress = 0;
+    const progressInterval = setInterval(() => {
+      if (uploadProgress < 90) {
+        const step = uploadProgress < 40 ? 5 : (uploadProgress < 75 ? 2 : 0.5);
+        uploadProgress += step;
+        progressBar.style.width = `${Math.min(uploadProgress, 90)}%`;
+        progressPercent.innerText = `${Math.floor(Math.min(uploadProgress, 90))}%`;
+
+        if (uploadProgress > 45) {
+          progressText.innerText = "Uploading raw data packets to Drive...";
+        }
+        if (uploadProgress > 75) {
+          progressText.innerText = "Awaiting sheets index synchronization...";
+        }
+      }
+    }, 150);
+
+    const unlockSubmitButton = () => {
+      clearInterval(progressInterval);
+      progressBar.style.width = '100%';
+      progressPercent.innerText = '100%';
+      progressText.innerText = 'Upload sequence completed!';
+
+      setTimeout(() => {
+        progressWrapper.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Execute Document Upload";
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }, 800);
+    };
+
+    const reader = new FileReader();
+    reader.onload = async function(event) {
+      const phoneNumbers = [];
+      document.querySelectorAll('.phone-row').forEach(row => {
+        const code = row.querySelector('.country-code-select').value;
+        const num = row.querySelector('.phone-digits').value;
+        if (num) phoneNumbers.push(`${code} ${num}`);
+      });
+
+      if (phoneNumbers.length === 0) {
+        await showAlertModal('Please provide at least one mobile contact number.', 'Missing Information', 'error');
+        unlockSubmitButton();
+        return;
+      }
+
+      const dynamicAnswers = {};
+      activeDynamicConfig.forEach(field => {
+        const el = document.getElementById("dyn_" + field.id);
+        dynamicAnswers[field.id] = el ? el.value : '';
+      });
+
+      const payload = {
+        recruiter: document.getElementById('formRecruiterSelect').value,
+        project: document.getElementById('formProjectSelect').value,
+        candidateName: document.getElementById('formCandidateName').value.trim(),
+        passportNumber: document.getElementById('formPassportNumber').value,
+        mobileNumber: phoneNumbers.join(', '),
+        remarks: document.getElementById('formRemarks').value.trim(),
+        dynamicAnswers: dynamicAnswers,
+        fileData: event.target.result,
+        overrideDuplicate: overrideDuplicate
+      };
+
+      google.script.run
+        .withSuccessHandler(async function(response) {
+          unlockSubmitButton();
+          const isError = typeof response === 'string' && response.indexOf('Error') === 0;
+          await showAlertModal(response, isError ? 'Submission Failed' : 'Success', isError ? 'error' : 'success');
+          if (isError) return;
+          
+          document.getElementById('formCandidateName').value = "";
+          document.getElementById('formPassportNumber').value = "";
+          document.getElementById('formRemarks').value = "";
+          resetPhoneRows();
+          resetDropZone();
+          // Reload the recruiter history immediately to show the new submission!
+          loadRecruiterSubmissionsHistory();
+        })
+        .withFailureHandler(async function(error) {
+          unlockSubmitButton();
+          await showAlertModal('Upload failed: ' + error.message, 'Submission Failed', 'error');
+        })
+        .submitUserData(payload);
+    };
+
+    reader.onerror = async function() {
+      await showAlertModal('Could not read the selected file. Please try again.', 'File Error', 'error');
+      unlockSubmitButton();
+    };
+
+    reader.readAsDataURL(fileEl);
+  }
+</script>
