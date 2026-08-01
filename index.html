@@ -1192,6 +1192,12 @@
         <p class="text-gray-500 italic text-sm">Loading project indexing cards...</p>
       </div>
     </div>
+
+    <div id="showMoreProjectsContainer" class="hidden mt-6 flex justify-center">
+      <button onclick="showAllProjectCards()" class="btn-premium-secondary hover:text-indigo-300 py-2.5 px-6 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition shadow-md">
+        View All Projects <span>⬇️</span>
+      </button>
+    </div>
   </div>
 
   <!-- Project Analytics Workspace (Dynamic Dashboard) -->
@@ -1397,6 +1403,13 @@
     forceReturnToUserView('Session error: ' + (error && error.message ? error.message : 'access denied.'));
   }
 
+  function showAllProjectCards() {
+    const hiddenCards = document.querySelectorAll('#projectCardsDeckGrid .project-card.hidden');
+    hiddenCards.forEach(card => card.classList.remove('hidden'));
+    const showMoreBtn = document.getElementById('showMoreProjectsContainer');
+    if (showMoreBtn) showMoreBtn.classList.add('hidden');
+  }
+
   function initManagerInterface() {
     loadProjectCardsGrid(true);
   }
@@ -1406,17 +1419,20 @@
       .withSuccessHandler(function(projects) {
         projectInventoryCache = projects;
         const deckGrid = document.getElementById('projectCardsDeckGrid');
+        const showMoreBtn = document.getElementById('showMoreProjectsContainer');
         deckGrid.innerHTML = '';
+        if (showMoreBtn) showMoreBtn.classList.add('hidden');
 
         if (projects.length === 0) {
           deckGrid.innerHTML = '<p class="text-gray-400 italic text-sm p-4 col-span-full">No active project structures found. Create a project to begin.</p>';
           return;
         }
 
-        projects.slice().reverse().forEach(p => {
+        const reversedProjects = projects.slice().reverse();
+        reversedProjects.forEach((p, index) => {
           const escName = p.name.replace(/'/g, "\\'");
           const card = document.createElement('div');
-          card.className = "project-card p-5 rounded-2xl cursor-pointer shadow-md";
+          card.className = "project-card p-5 rounded-2xl cursor-pointer shadow-md" + (index >= 6 ? " hidden" : "");
           card.setAttribute("onclick", `loadProjectDashboardWorkspace('${escName}')`);
 
           const subBadge = p.submission === 'Active'
@@ -1454,6 +1470,10 @@
           `;
           deckGrid.appendChild(card);
         });
+
+        if (reversedProjects.length > 6 && showMoreBtn) {
+          showMoreBtn.classList.remove('hidden');
+        }
 
         if (autoOpenTodaysActivity) {
           const busiestOpenProject = projects
@@ -2099,47 +2119,68 @@ This will remove their row from the Google Sheet and move their uploaded PDF in 
       // JSONP completely bypasses CORS with no fetch redirects.
       // ---------------------------------------------------------
       function jsonpCall_(action, args, onSuccess, onFailure) {
-        const cbName = '_gsCb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        let attempts = 0;
+        const maxAttempts = 3;
 
-        const timeoutId = setTimeout(function() {
-          cleanup_();
-          onFailure(new Error('Request timed out (5 minutes). The backend is still processing. Please try again.'));
-        }, 300000);
+        function attemptCall() {
+          attempts++;
+          const cbName = '_gsCb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+          let isResolved = false;
 
-        function cleanup_() {
-          delete window[cbName];
-          const el = document.getElementById(cbName);
-          if (el) el.parentNode.removeChild(el);
-          clearTimeout(timeoutId);
-        }
-
-        window[cbName] = function(data) {
-          cleanup_();
-          if (data && data.success) {
-            onSuccess(data.data);
-          } else {
-            onFailure(new Error((data && data.error) || 'Server returned an error.'));
-          }
-        };
-
-        try {
-          const url = new URL(APPS_SCRIPT_API_URL);
-          url.searchParams.set('action', action);
-          if (args && args.length > 0) url.searchParams.set('args', JSON.stringify(args));
-          url.searchParams.set('callback', cbName);
-
-          const script = document.createElement('script');
-          script.id = cbName;
-          script.src = url.toString();
-          script.onerror = function() {
+          const timeoutId = setTimeout(function() {
+            if (isResolved) return;
             cleanup_();
-            onFailure(new Error('Script load failed. Verify your Apps Script URL is correct and deployed as Web App with access set to "Anyone".'));
+            handleNetworkFailure(new Error('Request timed out (5 minutes).'));
+          }, 300000);
+
+          function cleanup_() {
+            isResolved = true;
+            delete window[cbName];
+            const el = document.getElementById(cbName);
+            if (el) el.parentNode.removeChild(el);
+            clearTimeout(timeoutId);
+          }
+
+          function handleNetworkFailure(err) {
+            if (attempts < maxAttempts) {
+              console.warn(`JSONP network/load error (attempt ${attempts}/${maxAttempts}): ${err.message}. Retrying...`);
+              setTimeout(attemptCall, 2000 * attempts); // Exponential backoff
+            } else {
+              onFailure(err);
+            }
+          }
+
+          window[cbName] = function(data) {
+            cleanup_();
+            if (data && data.success) {
+              onSuccess(data.data);
+            } else {
+              // Application errors (e.g. bad passcode) should NOT be retried
+              onFailure(new Error((data && data.error) || 'Server returned an error.'));
+            }
           };
-          document.head.appendChild(script);
-        } catch(urlErr) {
-          cleanup_();
-          onFailure(new Error('Invalid Apps Script URL. Please re-enter it in ⚙️ Connection settings.'));
+
+          try {
+            const url = new URL(APPS_SCRIPT_API_URL);
+            url.searchParams.set('action', action);
+            if (args && args.length > 0) url.searchParams.set('args', JSON.stringify(args));
+            url.searchParams.set('callback', cbName);
+
+            const script = document.createElement('script');
+            script.id = cbName;
+            script.src = url.toString();
+            script.onerror = function() {
+              cleanup_();
+              handleNetworkFailure(new Error('Script load failed. Verify your Apps Script URL is correct and deployed as Web App with access set to "Anyone".'));
+            };
+            document.head.appendChild(script);
+          } catch(urlErr) {
+            cleanup_();
+            onFailure(new Error('Invalid Apps Script URL. Please re-enter it in ⚙️ Connection settings.'));
+          }
         }
+
+        attemptCall();
       }
 
       function initClientAPIRouting_() {
@@ -2192,29 +2233,37 @@ This will remove their row from the Google Sheet and move their uploaded PDF in 
 
               if (method === 'submitUserData') {
                 // File upload — large base64 payload, must use POST
-                const controller = new AbortController();
-                const tid = setTimeout(function() { controller.abort(); }, 60000);
-                fetch(APPS_SCRIPT_API_URL, {
-                  method: 'POST',
-                  redirect: 'follow',
-                  signal: controller.signal,
-                  headers: { 'Content-Type': 'text/plain' },
-                  body: JSON.stringify({ action: method, args: args })
-                })
-                .then(function(r) { clearTimeout(tid); return r.text(); })
-                .then(function(text) {
-                  try {
-                    const res = JSON.parse(text);
-                    if (res.success) { if (success) success(res.data); }
-                    else { if (failure) failure(new Error(res.error || 'Upload error')); }
-                  } catch(e) {
-                    if (failure) failure(new Error('Invalid upload response from server.'));
-                  }
-                })
-                .catch(function(err) {
-                  clearTimeout(tid);
-                  if (failure) failure(new Error('Upload failed: ' + err.message));
-                });
+                function attemptFetch(fetchAttempts) {
+                  const controller = new AbortController();
+                  const tid = setTimeout(function() { controller.abort(); }, 60000);
+                  fetch(APPS_SCRIPT_API_URL, {
+                    method: 'POST',
+                    redirect: 'follow',
+                    signal: controller.signal,
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: method, args: args })
+                  })
+                  .then(function(r) { clearTimeout(tid); return r.text(); })
+                  .then(function(text) {
+                    try {
+                      const res = JSON.parse(text);
+                      if (res.success) { if (success) success(res.data); }
+                      else { if (failure) failure(new Error(res.error || 'Upload error')); }
+                    } catch(e) {
+                      throw new Error('Invalid upload response from server.');
+                    }
+                  })
+                  .catch(function(err) {
+                    clearTimeout(tid);
+                    if (fetchAttempts < 3) {
+                      console.warn(`Fetch POST error (attempt ${fetchAttempts}/3): ${err.message}. Retrying...`);
+                      setTimeout(function() { attemptFetch(fetchAttempts + 1); }, 2000 * fetchAttempts);
+                    } else {
+                      if (failure) failure(new Error('Upload failed: ' + err.message));
+                    }
+                  });
+                }
+                attemptFetch(1);
               } else {
                 // All other calls — JSONP via script tag (100% CORS-safe)
                 jsonpCall_(method, args, 
